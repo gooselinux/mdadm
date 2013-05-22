@@ -1,14 +1,14 @@
 Summary:     The mdadm program controls Linux md devices (software RAID arrays)
 Name:        mdadm
-Version:     3.1.3
+Version:     3.2.1
 Release:     1%{?dist}
 Source:      http://www.kernel.org/pub/linux/utils/raid/mdadm/mdadm-%{version}.tar.bz2
 Source1:     mdmonitor.init
 Source2:     raid-check
 Source3:     mdadm.rules
 Source4:     mdadm-raid-check-sysconfig
-Patch0:      mdadm-3.1.3-no-degraded.patch
-Patch1:      mdadm-3.1.3-insufficient.patch
+Source5:     mdadm-cron
+Patch0:      mdadm-3.1.5-unused-param.patch
 Patch19:     mdadm-3.1.3-udev.patch
 Patch20:     mdadm-2.5.2-static.patch
 URL:         http://www.kernel.org/pub/linux/utils/raid/mdadm/
@@ -29,23 +29,23 @@ almost all functions without a configuration file, though a configuration
 file can be used to help with some common tasks.
 
 %prep
-%setup -q -n mdadm-3.1.3
-%patch0 -p1 -b .degraded
-%patch1 -p1 -b .insufficient
+%setup -q
+%patch0 -p1 -b .param
 %patch19 -p1 -b .udev
 %patch20 -p1 -b .static
 
 %build
-make %{?_smp_mflags} CXFLAGS="$RPM_OPT_FLAGS -fno-strict-aliasing" SYSCONFDIR="%{_sysconfdir}" mdadm mdmon
+make %{?_smp_mflags} CXFLAGS="$RPM_OPT_FLAGS" SYSCONFDIR="%{_sysconfdir}" mdadm mdmon
 
 %install
 rm -rf %{buildroot}
 make DESTDIR=%{buildroot} MANDIR=%{_mandir} BINDIR=/sbin install
 rm -f %{buildroot}/lib/udev/rules.d/64*
 install -Dp -m 755 %{SOURCE1} %{buildroot}%{_initrddir}/mdmonitor
-install -Dp -m 755 %{SOURCE2} %{buildroot}%{_sysconfdir}/cron.weekly/99-raid-check
+install -Dp -m 755 %{SOURCE2} %{buildroot}%{_sbindir}/raid-check
 install -Dp -m 644 %{SOURCE3} %{buildroot}/lib/udev/rules.d/65-md-incremental.rules
 install -Dp -m 644 %{SOURCE4} %{buildroot}%{_sysconfdir}/sysconfig/raid-check
+install -Dp -m 644 %{SOURCE5} %{buildroot}%{_sysconfdir}/cron.d/raid-check
 mkdir -p -m 700 %{buildroot}/var/run/mdadm
 
 %clean
@@ -72,13 +72,34 @@ fi
 %doc TODO ChangeLog mdadm.conf-example COPYING misc/*
 /lib/udev/rules.d/*
 /sbin/*
+%{_sbindir}/raid-check
 %{_initrddir}/*
 %{_mandir}/man*/md*
-%{_sysconfdir}/cron.weekly/*
+%config(noreplace) %{_sysconfdir}/cron.d/*
 %config(noreplace) %{_sysconfdir}/sysconfig/*
 %attr(0700,root,root) %dir /var/run/mdadm
 
 %changelog
+* Mon Mar 28 2011 Doug Ledford <dledford@redhat.com> - 3.2.1-1
+- Update to latest upstream release
+- Don't report mismatch counts on either raid1 or raid10 devices
+- Check both active and idle arrays during raid check runs
+- Move raid-check script to /usr/sbin, add a crontab entry to /etc/cron.d
+  and mark it config(noreplace) so that users can select their own
+  raid check frequency and it will be preserved across updates
+- Allow the raid check script to set both the cpu and io priority on the
+  raid check process in an effort to minimize the impact to users on the
+  system
+- Related: bz633306
+
+* Fri Feb 04 2011 Doug Ledford <dledford@redhat.com> - 3.2-1
+- Update to latest upstream release
+- Related: bz633306, bz633667, bz633671, bz633688, bz633690, bz633692
+- Fix mdadm udev rules file
+- Resolves: bz605710
+- Process the Y option
+- Resolves: bz636883
+
 * Wed Aug 11 2010 Doug Ledford <dledford@redhat.com> - 3.1.3-1
 - Update to official 3.1.3 release instead of a git snapshot
 - Add patch for return code in the case that a container is not assembled

@@ -1,15 +1,20 @@
---- mdadm-3.1.3-git20100722/udev-md-raid.rules.no-incremental	2010-07-22 12:11:39.188967623 -0400
-+++ mdadm-3.1.3-git20100722/udev-md-raid.rules	2010-07-22 12:12:24.298092552 -0400
-@@ -3,8 +3,10 @@
+--- mdadm-3.2.1/udev-md-raid.rules.udev	2011-03-27 22:31:20.000000000 -0400
++++ mdadm-3.2.1/udev-md-raid.rules	2011-03-28 10:14:26.047232843 -0400
+@@ -2,11 +2,13 @@
+ 
  SUBSYSTEM!="block", GOTO="md_end"
  
++# In Fedora we handle the raid components in 65-md-incremental.rules so that
++# we can do things like honor anaconda command line options and such
  # handle potential components of arrays
--ENV{ID_FS_TYPE}=="linux_raid_member", ACTION=="remove", RUN+="/sbin/mdadm -If $name"
+-ENV{ID_FS_TYPE}=="linux_raid_member", ACTION=="remove", RUN+="/sbin/mdadm -If $name --path $env{ID_PATH}"
 -ENV{ID_FS_TYPE}=="linux_raid_member", ACTION=="add", RUN+="/sbin/mdadm --incremental $env{DEVNAME}"
-+# Note: in Fedora we handle incremental assembly in 65-incremental.rules so
-+#       we can do things like honor anaconda install options
-+#ENV{ID_FS_TYPE}=="linux_raid_member", ACTION=="remove", RUN+="/sbin/mdadm -If $name"
+-ENV{ID_FS_TYPE}=="isw_raid_member", ACTION=="remove", RUN+="/sbin/mdadm -If $name --path $env{ID_PATH}"
+-ENV{ID_FS_TYPE}=="isw_raid_member", ACTION=="add", RUN+="/sbin/mdadm --incremental $env{DEVNAME}"
++#ENV{ID_FS_TYPE}=="linux_raid_member", ACTION=="remove", RUN+="/sbin/mdadm -If $name --path $env{ID_PATH}"
 +#ENV{ID_FS_TYPE}=="linux_raid_member", ACTION=="add", RUN+="/sbin/mdadm --incremental $env{DEVNAME}"
++#ENV{ID_FS_TYPE}=="isw_raid_member", ACTION=="remove", RUN+="/sbin/mdadm -If $name --path $env{ID_PATH}"
++#ENV{ID_FS_TYPE}=="isw_raid_member", ACTION=="add", RUN+="/sbin/mdadm --incremental $env{DEVNAME}"
  
  # handle md arrays
  ACTION!="add|change", GOTO="md_end"
